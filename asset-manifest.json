@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/daquiz/static/css/main.f8b789ab.css",
-    "main.js": "/daquiz/static/js/main.874d1210.js",
+    "main.css": "/daquiz/static/css/main.02d5d79e.css",
+    "main.js": "/daquiz/static/js/main.4e1979a7.js",
     "static/js/738.672b24e4.chunk.js": "/daquiz/static/js/738.672b24e4.chunk.js",
     "static/js/907.6f301350.chunk.js": "/daquiz/static/js/907.6f301350.chunk.js",
     "static/js/923.1c773004.chunk.js": "/daquiz/static/js/923.1c773004.chunk.js",
@@ -13,8 +13,8 @@
     "static/js/834.5fd3bea7.chunk.js": "/daquiz/static/js/834.5fd3bea7.chunk.js",
     "static/js/453.419a8412.chunk.js": "/daquiz/static/js/453.419a8412.chunk.js",
     "index.html": "/daquiz/index.html",
-    "main.f8b789ab.css.map": "/daquiz/static/css/main.f8b789ab.css.map",
-    "main.874d1210.js.map": "/daquiz/static/js/main.874d1210.js.map",
+    "main.02d5d79e.css.map": "/daquiz/static/css/main.02d5d79e.css.map",
+    "main.4e1979a7.js.map": "/daquiz/static/js/main.4e1979a7.js.map",
     "738.672b24e4.chunk.js.map": "/daquiz/static/js/738.672b24e4.chunk.js.map",
     "907.6f301350.chunk.js.map": "/daquiz/static/js/907.6f301350.chunk.js.map",
     "923.1c773004.chunk.js.map": "/daquiz/static/js/923.1c773004.chunk.js.map",
@@ -27,7 +27,7 @@
     "453.419a8412.chunk.js.map": "/daquiz/static/js/453.419a8412.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.f8b789ab.css",
-    "static/js/main.874d1210.js"
+    "static/css/main.02d5d79e.css",
+    "static/js/main.4e1979a7.js"
   ]
 }
