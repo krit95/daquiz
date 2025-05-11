@@ -6,6 +6,7 @@ import Confetti from "react-confetti";
 import { firebaseConfig } from "./firebaseConfig";
 import { IonIcon } from "@ionic/react";
 import { arrowForwardOutline } from "ionicons/icons";
+import barChartIcon from './assets/bar-chart-676.png';
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -115,9 +116,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] to-[#fce4ec] flex items-center justify-center p-4">
-      <div className="flex w-full max-w-4xl space-x-8">
-        <div className="animate-fade-in w-2/3 p-6 bg-white rounded-2xl shadow-xl space-y-4">
-          <img src={`${process.env.PUBLIC_URL}//bar-chart-676.png`} alt="logo" className="h-10 w-10" />
+      <div className="flex flex-col lg:flex-row w-full max-w-5xl gap-4">
+        <div className="animate-fade-in w-full lg:w-2/3 p-6 bg-white rounded-2xl shadow-xl space-y-4">
+          <img src={barChartIcon} alt="Bar chart logo" className="w-10 h-10" />
           <h1 className="text-3xl font-bold text-indigo-700 text-center">Data Quiz of the Day</h1>
 
           {currentQuestion ? (
@@ -216,7 +217,7 @@ function App() {
               )}
 
               {isSubmitted && (
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   {isCorrect && <Confetti width={window.innerWidth} height={window.innerHeight} />}
 
                   {currentQuestionIndex < questions.length - 1 && (
@@ -228,15 +229,13 @@ function App() {
                     </button>
                   )}
 
-                  {currentQuestion.solution && (
-                    <button
-                      className="bg-indigo-600 text-white px-4 py-2 ml-auto rounded-md flex items-center gap-2 hover:bg-indigo-700"
-                      onClick={() => setShowExplanation(true)}
-                    >
-                      Explain
-                      <IonIcon icon={arrowForwardOutline} />
-                    </button>
-                  )}
+                  <button
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-indigo-700 sm:ml-auto"
+                    onClick={() => setShowExplanation(true)}
+                  >
+                    Explain
+                    <IonIcon icon={arrowForwardOutline} />
+                  </button>
                 </div>
               )}
             </>
@@ -245,8 +244,9 @@ function App() {
           )}
         </div>
 
+        {/* Explanation Sidebar (conditionally shown) */}
         {showExplanation && (
-          <div className="w-1/3 p-6 bg-white rounded-2xl shadow-xl space-y-4 sticky top-0 slide-in-right">
+          <div className="w-full lg:w-1/3 p-6 bg-white rounded-2xl shadow-xl space-y-4 slide-in-right">
             <h2 className="text-xl font-bold text-indigo-700">Explanation</h2>
             <p className="text-sm text-gray-700">{currentQuestion?.solution}</p>
           </div>
