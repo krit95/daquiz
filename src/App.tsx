@@ -1,0 +1,258 @@
+import { useEffect, useState } from "react";
+import "./index.css";
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, get } from "firebase/database";
+import Confetti from "react-confetti";
+import { firebaseConfig } from "./firebaseConfig";
+import { IonIcon } from "@ionic/react";
+import { arrowForwardOutline } from "ionicons/icons";
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+interface Question {
+  id: string;
+  context?: string;
+  question: string;
+  type: "mcq" | "text" | "multi";
+  options?: string[];
+  answer: string | string[];
+  hint?: string;
+  solution: string;
+  explainButton?: boolean;
+}
+
+function App() {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
+  const [showHint, setShowHint] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [shakeAnimation, setShakeAnimation] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
+
+  const currentQuestion = questions[currentQuestionIndex];
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const today = new Date().toLocaleDateString("en-CA"); // Format date for daily questions
+      const dbRef = ref(db, `questions/${today}`);
+
+      try {
+        const snapshot = await get(dbRef);
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const questionData = Object.keys(data).map((key) => ({
+            id: key,
+            ...data[key],
+          })) as Question[];
+          setQuestions(questionData);
+        } else {
+          console.log("No questions available today.");
+        }
+      } catch (error) {
+        console.error("Error fetching questions:", error);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
+  const handleSubmit = () => {
+    if (!currentQuestion) return;
+
+    let correct = false;
+
+    if (currentQuestion.type === "multi") {
+      const correctAnswers = (currentQuestion.answer as string[]).map((a) =>
+        a.trim().toLowerCase()
+      );
+      const userAnswers = selectedAnswers.map((a) => a.trim().toLowerCase());
+
+      correct =
+        correctAnswers.length === userAnswers.length &&
+        correctAnswers.every((ans) => userAnswers.includes(ans));
+    } else if (currentQuestion.type === "mcq") {
+      correct =
+        selectedAnswer.trim().toLowerCase() ===
+        (currentQuestion.answer as string).trim().toLowerCase();
+    } else if (currentQuestion.type === "text") {
+      // For text-based questions, ignore case and trim both inputs
+      correct =
+        selectedAnswer.trim().toLowerCase() ===
+        (currentQuestion.answer as string).trim().toLowerCase();
+    }
+
+    setIsCorrect(correct);
+    setIsSubmitted(true);
+
+    if (!correct) {
+      setShakeAnimation(true);
+      setTimeout(() => setShakeAnimation(false), 500);
+    }
+  };
+
+
+  const handleNext = () => {
+    setCurrentQuestionIndex((i) => i + 1);
+    setSelectedAnswer("");
+    setSelectedAnswers([]);
+    setShowHint(false);
+    setIsSubmitted(false);
+    setIsCorrect(false);
+    setShowExplanation(false);
+  };
+
+  const toggleMultiSelect = (option: string) => {
+    if (selectedAnswers.includes(option)) {
+      setSelectedAnswers(selectedAnswers.filter((o) => o !== option));
+    } else {
+      setSelectedAnswers([...selectedAnswers, option]);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] to-[#fce4ec] flex items-center justify-center p-4">
+      <div className="flex w-full max-w-4xl space-x-8">
+        <div className="animate-fade-in w-2/3 p-6 bg-white rounded-2xl shadow-xl space-y-4">
+          <h1 className="text-3xl font-bold text-indigo-700 text-center">🔍 Daily Data Quiz</h1>
+
+          {currentQuestion ? (
+            <>
+              {currentQuestion.context && (
+                <div className="bg-blue-50 p-4 rounded-lg mb-4 text-sm text-gray-700">
+                  {currentQuestion.context}
+                </div>
+              )}
+
+              <p className="text-gray-700 text-lg">{currentQuestion.question}</p>
+
+              {currentQuestion.type === "mcq" || currentQuestion.type === "multi" ? (
+                <div className="space-y-2">
+                  {currentQuestion.options?.map((option, idx) => {
+                    const isSelected =
+                      currentQuestion.type === "multi"
+                        ? selectedAnswers.includes(option)
+                        : selectedAnswer === option;
+
+                    const isCorrectAnswer =
+                      Array.isArray(currentQuestion.answer)
+                        ? currentQuestion.answer.map((a) => a.toLowerCase()).includes(option.toLowerCase())
+                        : option.trim().toLowerCase() === currentQuestion.answer.toString().trim().toLowerCase();
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`cursor-pointer w-full flex items-center justify-between px-4 py-2 rounded-lg border
+                          ${isSubmitted
+                            ? isCorrectAnswer
+                              ? "bg-green-100 text-green-700"
+                              : isSelected
+                              ? "bg-red-100 text-red-700"
+                              : "bg-gray-50"
+                            : isSelected
+                            ? "bg-indigo-100 border-indigo-400"
+                            : "bg-gray-50"
+                          }`}
+                        onClick={() =>
+                          !isSubmitted &&
+                          (currentQuestion.type === "multi"
+                            ? toggleMultiSelect(option)
+                            : setSelectedAnswer(option))
+                        }
+                      >
+                        <span>{option}</span>
+                        {isSubmitted && (
+                          <>
+                            {isCorrectAnswer && <span className="text-green-600">✅</span>}
+                            {!isCorrectAnswer && isSelected && <span className="text-red-600">❌</span>}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  className="w-full p-2 border rounded-lg"
+                  value={selectedAnswer}
+                  onChange={(e) => setSelectedAnswer(e.target.value)}
+                  disabled={isSubmitted && isCorrect}
+                />
+              )}
+
+              {showHint && currentQuestion.hint && (
+                <div className="bg-yellow-100 p-3 rounded text-sm">{currentQuestion.hint}</div>
+              )}
+
+              {currentQuestion.type === "text" && isSubmitted && !isCorrect && (
+                <div className="text-sm text-red-600 mt-2">
+                  <p>Your answer is incorrect. The correct answer is:</p>
+                  <p className="font-bold text-gray-700">{currentQuestion.answer}</p>
+                </div>
+              )}
+
+              {!isSubmitted && (
+                <div className="flex gap-4">
+                  <button
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+                    onClick={handleSubmit}
+                  >
+                    Submit
+                  </button>
+                  {currentQuestion.hint && (
+                    <button
+                      className="text-indigo-600 underline text-sm"
+                      onClick={() => setShowHint(true)}
+                    >
+                      Need a Hint?
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {isSubmitted && (
+                <div className="mt-4 flex items-center justify-between">
+                  {isCorrect && <Confetti width={window.innerWidth} height={window.innerHeight} />}
+
+                  {currentQuestionIndex < questions.length - 1 && (
+                    <button
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                      onClick={handleNext}
+                    >
+                      Next Question
+                    </button>
+                  )}
+
+                  {currentQuestion.solution && (
+                    <button
+                      className="bg-indigo-600 text-white px-4 py-2 ml-auto rounded-md flex items-center gap-2 hover:bg-indigo-700"
+                      onClick={() => setShowExplanation(true)}
+                    >
+                      Explain
+                      <IonIcon icon={arrowForwardOutline} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-center text-gray-500">No questions available for today.</p>
+          )}
+        </div>
+
+        {showExplanation && (
+          <div className="w-1/3 p-6 bg-white rounded-2xl shadow-xl space-y-4 sticky top-0 slide-in-right">
+            <h2 className="text-xl font-bold text-indigo-700">Explanation</h2>
+            <p className="text-sm text-gray-700">{currentQuestion?.solution}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default App;
