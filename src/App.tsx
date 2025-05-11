@@ -117,7 +117,8 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] to-[#fce4ec] flex items-center justify-center p-4">
       <div className="flex w-full max-w-4xl space-x-8">
         <div className="animate-fade-in w-2/3 p-6 bg-white rounded-2xl shadow-xl space-y-4">
-          <h1 className="text-3xl font-bold text-indigo-700 text-center">🔍 Daily Data Quiz</h1>
+          <img src={`${process.env.PUBLIC_URL}//bar-chart-676.png`} alt="logo" className="h-10 w-10" />
+          <h1 className="text-3xl font-bold text-indigo-700 text-center">Data Quiz of the Day</h1>
 
           {currentQuestion ? (
             <>
