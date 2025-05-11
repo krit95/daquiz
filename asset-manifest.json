@@ -1,0 +1,33 @@
+{
+  "files": {
+    "main.css": "/daquiz/static/css/main.f8b789ab.css",
+    "main.js": "/daquiz/static/js/main.874d1210.js",
+    "static/js/738.672b24e4.chunk.js": "/daquiz/static/js/738.672b24e4.chunk.js",
+    "static/js/907.6f301350.chunk.js": "/daquiz/static/js/907.6f301350.chunk.js",
+    "static/js/923.1c773004.chunk.js": "/daquiz/static/js/923.1c773004.chunk.js",
+    "static/js/627.1c292a6d.chunk.js": "/daquiz/static/js/627.1c292a6d.chunk.js",
+    "static/js/938.b6fbaece.chunk.js": "/daquiz/static/js/938.b6fbaece.chunk.js",
+    "static/js/247.4b2ad6c7.chunk.js": "/daquiz/static/js/247.4b2ad6c7.chunk.js",
+    "static/js/82.da92e030.chunk.js": "/daquiz/static/js/82.da92e030.chunk.js",
+    "static/js/768.d880043e.chunk.js": "/daquiz/static/js/768.d880043e.chunk.js",
+    "static/js/834.5fd3bea7.chunk.js": "/daquiz/static/js/834.5fd3bea7.chunk.js",
+    "static/js/453.419a8412.chunk.js": "/daquiz/static/js/453.419a8412.chunk.js",
+    "index.html": "/daquiz/index.html",
+    "main.f8b789ab.css.map": "/daquiz/static/css/main.f8b789ab.css.map",
+    "main.874d1210.js.map": "/daquiz/static/js/main.874d1210.js.map",
+    "738.672b24e4.chunk.js.map": "/daquiz/static/js/738.672b24e4.chunk.js.map",
+    "907.6f301350.chunk.js.map": "/daquiz/static/js/907.6f301350.chunk.js.map",
+    "923.1c773004.chunk.js.map": "/daquiz/static/js/923.1c773004.chunk.js.map",
+    "627.1c292a6d.chunk.js.map": "/daquiz/static/js/627.1c292a6d.chunk.js.map",
+    "938.b6fbaece.chunk.js.map": "/daquiz/static/js/938.b6fbaece.chunk.js.map",
+    "247.4b2ad6c7.chunk.js.map": "/daquiz/static/js/247.4b2ad6c7.chunk.js.map",
+    "82.da92e030.chunk.js.map": "/daquiz/static/js/82.da92e030.chunk.js.map",
+    "768.d880043e.chunk.js.map": "/daquiz/static/js/768.d880043e.chunk.js.map",
+    "834.5fd3bea7.chunk.js.map": "/daquiz/static/js/834.5fd3bea7.chunk.js.map",
+    "453.419a8412.chunk.js.map": "/daquiz/static/js/453.419a8412.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f8b789ab.css",
+    "static/js/main.874d1210.js"
+  ]
+}
