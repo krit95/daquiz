@@ -7,6 +7,8 @@ import { firebaseConfig } from "./firebaseConfig";
 import { IonIcon } from "@ionic/react";
 import { arrowForwardOutline } from "ionicons/icons";
 import barChartIcon from './assets/bar-chart-676.png';
+import StatsPanel from "./components/StatsPanel";
+
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -24,6 +26,7 @@ interface Question {
 }
 
 function App() {
+  const [correctAnswerCount, setCorrectAnswerCount] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
@@ -33,6 +36,8 @@ function App() {
   const [isCorrect, setIsCorrect] = useState(false);
   const [shakeAnimation, setShakeAnimation] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [showBonus, setShowBonus] = useState(false);
+
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -92,6 +97,15 @@ function App() {
     if (!correct) {
       setShakeAnimation(true);
       setTimeout(() => setShakeAnimation(false), 500);
+    } else {
+      setCorrectAnswerCount((prev) => prev + 1);
+      setShowBonus(true);
+      setTimeout(() => setShowBonus(false), 5000); // Hide animation after 1 second
+    }
+
+    if (currentQuestionIndex === questions.length - 1) {
+      console.log("Updating insights for ", correctAnswerCount);
+      updateInsights(correctAnswerCount);
     }
   };
 
@@ -114,136 +128,178 @@ function App() {
     }
   };
 
+  function updateInsights(correctAnswers: number) {
+    const insights = correctAnswers * 10;
+    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+
+    const history = JSON.parse(localStorage.getItem("insightHistory") || "{}");
+    history[today] = insights;
+    localStorage.setItem("insightHistory", JSON.stringify(history));
+
+    const highest = parseInt(localStorage.getItem("highestInsights") || "0");
+    if (insights > highest) {
+      localStorage.setItem("highestInsights", insights.toString());
+    }
+
+    const lastQuizDate = localStorage.getItem("lastQuizDate");
+    let streak = parseInt(localStorage.getItem("currentStreak") || "0");
+
+    if (lastQuizDate) {
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+      if (lastQuizDate === yesterday) {
+        streak += 1;
+      } else if (lastQuizDate !== today) {
+        streak = 1;
+      }
+    } else {
+      streak = 1;
+    }
+
+    localStorage.setItem("currentStreak", streak.toString());
+    localStorage.setItem("lastQuizDate", today);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] to-[#fce4ec] flex items-center justify-center p-4">
       <div className="flex flex-col lg:flex-row w-full max-w-5xl gap-4">
         <div className="animate-fade-in w-full lg:w-2/3 p-6 bg-white rounded-2xl shadow-xl space-y-4">
-          <img src={barChartIcon} alt="Bar chart logo" className="w-10 h-10" />
+          <div className="flex w-full item-center justify-center "><img src={barChartIcon} alt="Bar chart logo" className="w-10 h-10" /></div>
           <h1 className="text-3xl font-bold text-indigo-700 text-center">Data Quiz of the Day</h1>
 
-          {currentQuestion ? (
-            <>
-              {currentQuestion.context && (
-                <div className="bg-blue-50 p-4 rounded-lg mb-4 text-sm text-gray-700">
-                  {currentQuestion.context}
-                </div>
-              )}
+          <div className="p-4">
+            <StatsPanel />
 
-              <p className="text-gray-700 text-lg">{currentQuestion.question}</p>
+            {currentQuestion ? (
+              <>
+                {currentQuestion.context && (
+                  <div className="bg-blue-50 p-4 rounded-lg mb-4 text-sm text-gray-700">
+                    {currentQuestion.context}
+                  </div>
+                )}
 
-              {currentQuestion.type === "mcq" || currentQuestion.type === "multi" ? (
-                <div className="space-y-2">
-                  {currentQuestion.options?.map((option, idx) => {
-                    const isSelected =
-                      currentQuestion.type === "multi"
-                        ? selectedAnswers.includes(option)
-                        : selectedAnswer === option;
+                <p className="text-gray-700 text-lg">{currentQuestion.question}</p>
 
-                    const isCorrectAnswer =
-                      Array.isArray(currentQuestion.answer)
-                        ? currentQuestion.answer.map((a) => a.toLowerCase()).includes(option.toLowerCase())
-                        : option.trim().toLowerCase() === currentQuestion.answer.toString().trim().toLowerCase();
+                {currentQuestion.type === "mcq" || currentQuestion.type === "multi" ? (
+                  <div className="space-y-2">
+                    {currentQuestion.options?.map((option, idx) => {
+                      const isSelected =
+                        currentQuestion.type === "multi"
+                          ? selectedAnswers.includes(option)
+                          : selectedAnswer === option;
 
-                    return (
-                      <div
-                        key={idx}
-                        className={`cursor-pointer w-full flex items-center justify-between px-4 py-2 rounded-lg border
-                          ${isSubmitted
-                            ? isCorrectAnswer
-                              ? "bg-green-100 text-green-700"
+                      const isCorrectAnswer =
+                        Array.isArray(currentQuestion.answer)
+                          ? currentQuestion.answer.map((a) => a.toLowerCase()).includes(option.toLowerCase())
+                          : option.trim().toLowerCase() === currentQuestion.answer.toString().trim().toLowerCase();
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`cursor-pointer w-full flex items-center justify-between px-4 py-2 rounded-lg border
+                            ${isSubmitted
+                              ? isCorrectAnswer
+                                ? "bg-green-100 text-green-700"
+                                : isSelected
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-50"
                               : isSelected
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-indigo-100 border-indigo-400"
                               : "bg-gray-50"
-                            : isSelected
-                            ? "bg-indigo-100 border-indigo-400"
-                            : "bg-gray-50"
-                          }`}
-                        onClick={() =>
-                          !isSubmitted &&
-                          (currentQuestion.type === "multi"
-                            ? toggleMultiSelect(option)
-                            : setSelectedAnswer(option))
-                        }
+                            }`}
+                          onClick={() =>
+                            !isSubmitted &&
+                            (currentQuestion.type === "multi"
+                              ? toggleMultiSelect(option)
+                              : setSelectedAnswer(option))
+                          }
+                        >
+                          <span>{option}</span>
+                          {isSubmitted && (
+                            <>
+                              {isCorrectAnswer && <span className="text-green-600">✅</span>}
+                              {!isCorrectAnswer && isSelected && <span className="text-red-600">❌</span>}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-lg"
+                    value={selectedAnswer}
+                    onChange={(e) => setSelectedAnswer(e.target.value)}
+                    disabled={isSubmitted && isCorrect}
+                  />
+                )}
+
+                {showHint && currentQuestion.hint && (
+                  <div className="bg-yellow-100 p-3 rounded text-sm">{currentQuestion.hint}</div>
+                )}
+
+                {currentQuestion.type === "text" && isSubmitted && !isCorrect && (
+                  <div className="text-sm text-red-600 mt-2">
+                    <p>Your answer is incorrect. The correct answer is:</p>
+                    <p className="font-bold text-gray-700">{currentQuestion.answer}</p>
+                  </div>
+                )}
+
+
+                {!isSubmitted && (
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <button
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+                      onClick={handleSubmit}
+                    >
+                      Submit
+                    </button>
+                    {currentQuestion.hint && (
+                      <button
+                        className="text-indigo-600 underline text-sm"
+                        onClick={() => setShowHint(true)}
                       >
-                        <span>{option}</span>
-                        {isSubmitted && (
-                          <>
-                            {isCorrectAnswer && <span className="text-green-600">✅</span>}
-                            {!isCorrectAnswer && isSelected && <span className="text-red-600">❌</span>}
-                          </>
-                        )}
+                        Need a Hint?
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {isSubmitted && (
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    {isCorrect && <Confetti width={window.innerWidth} height={window.innerHeight} />}
+
+                    {currentQuestionIndex < questions.length - 1 && (
+                      <button
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                        onClick={handleNext}
+                      >
+                        Next Question
+                      </button>
+                    )}
+
+                    {/* Display +25 for correct answer */}
+                    {showBonus && (
+                      <div className="text-green-600 text-2xl font-bold animate-pulse">
+                        +10 Insights
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <input
-                  type="text"
-                  className="w-full p-2 border rounded-lg"
-                  value={selectedAnswer}
-                  onChange={(e) => setSelectedAnswer(e.target.value)}
-                  disabled={isSubmitted && isCorrect}
-                />
-              )}
+                    )}
 
-              {showHint && currentQuestion.hint && (
-                <div className="bg-yellow-100 p-3 rounded text-sm">{currentQuestion.hint}</div>
-              )}
-
-              {currentQuestion.type === "text" && isSubmitted && !isCorrect && (
-                <div className="text-sm text-red-600 mt-2">
-                  <p>Your answer is incorrect. The correct answer is:</p>
-                  <p className="font-bold text-gray-700">{currentQuestion.answer}</p>
-                </div>
-              )}
-
-              {!isSubmitted && (
-                <div className="flex gap-4">
-                  <button
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
-                    onClick={handleSubmit}
-                  >
-                    Submit
-                  </button>
-                  {currentQuestion.hint && (
                     <button
-                      className="text-indigo-600 underline text-sm"
-                      onClick={() => setShowHint(true)}
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-indigo-700 sm:ml-auto"
+                      onClick={() => setShowExplanation(true)}
                     >
-                      Need a Hint?
+                      Explain
+                      <IonIcon icon={arrowForwardOutline} />
                     </button>
-                  )}
-                </div>
-              )}
-
-              {isSubmitted && (
-                <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  {isCorrect && <Confetti width={window.innerWidth} height={window.innerHeight} />}
-
-                  {currentQuestionIndex < questions.length - 1 && (
-                    <button
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                      onClick={handleNext}
-                    >
-                      Next Question
-                    </button>
-                  )}
-
-                  <button
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-indigo-700 sm:ml-auto"
-                    onClick={() => setShowExplanation(true)}
-                  >
-                    Explain
-                    <IonIcon icon={arrowForwardOutline} />
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="text-center text-gray-500">No questions available for today.</p>
-          )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-center text-gray-500">No questions available for today.</p>
+            )}
+          </div>
         </div>
-
         {/* Explanation Sidebar (conditionally shown) */}
         {showExplanation && (
           <div className="w-full lg:w-1/3 p-6 bg-white rounded-2xl shadow-xl space-y-4 slide-in-right">
