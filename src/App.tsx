@@ -8,6 +8,7 @@ import { IonIcon } from "@ionic/react";
 import { arrowForwardOutline } from "ionicons/icons";
 import barChartIcon from './assets/bar-chart-676.png';
 import StatsPanel from "./components/StatsPanel";
+import React from 'react';
 
 
 const app = initializeApp(firebaseConfig);
@@ -17,7 +18,7 @@ interface Question {
   id: string;
   context?: string;
   question: string;
-  type: "mcq" | "text" | "multi";
+  type: "mcq" | "text" | "multi" | "fact";
   options?: string[];
   answer: string | string[];
   hint?: string;
@@ -29,6 +30,7 @@ function App() {
   const [correctAnswerCount, setCorrectAnswerCount] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [showHint, setShowHint] = useState(false);
@@ -37,6 +39,7 @@ function App() {
   const [shakeAnimation, setShakeAnimation] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
+  const [dailySeed, setDailySeed] = useState<number | null>(null);
 
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -44,6 +47,9 @@ function App() {
   useEffect(() => {
     const fetchQuestions = async () => {
       const today = new Date().toLocaleDateString("en-CA"); // Format date for daily questions
+      const seed = getDailyUniqueNumber(today);
+      setDailySeed(seed);
+
       const dbRef = ref(db, `questions/${today}`);
 
       try {
@@ -55,6 +61,8 @@ function App() {
             ...data[key],
           })) as Question[];
           setQuestions(questionData);
+          const questionKeys = Object.keys(questionData); // ['q1', 'q2', 'q3', 'q4']
+          setTotalQuestions(questionKeys.length);
         } else {
           console.log("No questions available today.");
         }
@@ -68,6 +76,11 @@ function App() {
 
   const handleSubmit = () => {
     if (!currentQuestion) return;
+
+    if (currentQuestion.type === "fact") {
+      // No submission needed for facts
+      return;
+    }
 
     let correct = false;
 
@@ -128,6 +141,14 @@ function App() {
     }
   };
 
+  function getDailyUniqueNumber(dateStr: string): number {
+    let hash = 0;
+    for (let i = 0; i < dateStr.length; i++) {
+      hash = dateStr.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash % 100000); // Keep it within a reasonable range
+  }
+
   function updateInsights(correctAnswers: number) {
     const insights = correctAnswers * 10;
     const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
@@ -164,22 +185,34 @@ function App() {
       <div className="flex flex-col lg:flex-row w-full max-w-5xl gap-4">
         <div className="animate-fade-in w-full lg:w-2/3 p-6 bg-white rounded-2xl shadow-xl space-y-4">
           <div className="flex w-full item-center justify-center "><img src={barChartIcon} alt="Bar chart logo" className="w-10 h-10" /></div>
-          <h1 className="text-3xl font-bold text-indigo-700 text-center">Data Quiz of the Day</h1>
+          <h1 className="text-3xl font-bold text-indigo-700 text-center">Data Quiz of the Day #{dailySeed}</h1>
 
           <div className="p-4">
             <StatsPanel />
+            <div className="flex justify-end mb-2">
+              <span className="bg-indigo-100 text-indigo-800 text-sm font-semibold px-3 py-1 rounded-full">
+                {currentQuestionIndex + 1} of {totalQuestions}
+              </span>
+            </div>
 
             {currentQuestion ? (
               <>
                 {currentQuestion.context && (
                   <div className="bg-blue-50 p-4 rounded-lg mb-4 text-sm text-gray-700">
-                    {currentQuestion.context}
+                    {currentQuestion.context.split('\\n').map((line, index) => (
+                      <React.Fragment key={index}>
+                        {line}
+                        <br/>
+                      </React.Fragment>
+                    ))}
                   </div>
                 )}
 
-                <p className="text-gray-700 text-lg">{currentQuestion.question}</p>
+                <p className="text-gray-700 text-lg">{currentQuestion.question?.replaceAll("\n", "<br>")}</p>
 
-                {currentQuestion.type === "mcq" || currentQuestion.type === "multi" ? (
+                {currentQuestion.type === "fact" ? (
+                  <div></div>
+                ) : currentQuestion.type === "mcq" || currentQuestion.type === "multi" ? (
                   <div className="space-y-2">
                     {currentQuestion.options?.map((option, idx) => {
                       const isSelected =
@@ -245,8 +278,7 @@ function App() {
                   </div>
                 )}
 
-
-                {!isSubmitted && (
+                {!isSubmitted && currentQuestion.type !== "fact" && (
                   <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <button
                       className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
@@ -265,7 +297,7 @@ function App() {
                   </div>
                 )}
 
-                {isSubmitted && (
+                {(isSubmitted || currentQuestion.type == "fact") && (
                   <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     {isCorrect && <Confetti width={window.innerWidth} height={window.innerHeight} />}
 
@@ -285,13 +317,15 @@ function App() {
                       </div>
                     )}
 
-                    <button
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-indigo-700 sm:ml-auto"
-                      onClick={() => setShowExplanation(true)}
-                    >
-                      Explain
-                      <IonIcon icon={arrowForwardOutline} />
-                    </button>
+                    {currentQuestion.type != "fact" && (
+                      <button
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-indigo-700 sm:ml-auto"
+                        onClick={() => setShowExplanation(true)}
+                      >
+                        Show Explanation
+                        <IonIcon icon={arrowForwardOutline} />
+                      </button>
+                    )}
                   </div>
                 )}
               </>
